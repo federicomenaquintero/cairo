@@ -95,17 +95,12 @@ impl Surface {
     }
 
 
-    pub fn set_mime_data<T: AsRef<[u8]> + 'static>(
-        &self,
-        mime_type: &str,
-        slice: T) -> Result<(), Status> {
-        let b = Box::new(slice);
-        let (size, data) = {
-            let slice = (*b).as_ref();
-            (slice.len(), slice.as_ptr())
-        };
+    pub fn set_mime_data(&self, mime_type: &str, data: Vec<u8>) -> Result<(), Status> {
+        let b = Box::new(data);
 
-        let user_data = Box::into_raw(b);
+        let (size, data) = (b.len(), b.as_ptr());
+
+        let raw_box = Box::into_raw(b);
 
         let status = unsafe {
             let mime_type = CString::new(mime_type).unwrap();
@@ -113,8 +108,8 @@ impl Surface {
                 mime_type.as_ptr(),
                 data,
                 size as c_ulong,
-                Some(unbox::<T>),
-                user_data as *mut _,
+                Some(unbox::<Vec<u8>>),
+                raw_box as *mut _,
             )
         };
 
@@ -291,7 +286,7 @@ mod tests {
         /* Initially the data for any mime type has to be none */
         assert!(data.is_none());
 
-        assert!(surface.set_mime_data(MIME_TYPE_PNG, &[1u8, 10u8]).is_ok());
+        assert!(surface.set_mime_data(MIME_TYPE_PNG, vec![1u8, 10u8]).is_ok());
         let data = surface.get_mime_data(MIME_TYPE_PNG).unwrap();
         assert_eq!(data, &[1u8, 10u8]);
     }
