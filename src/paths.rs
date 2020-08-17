@@ -135,7 +135,7 @@ mod tests {
     fn make_cr() -> Context {
         let surface = ImageSurface::create(Format::Rgb24, 1, 1).unwrap();
 
-        Context::new(&surface)
+        Context::new(&surface).unwrap()
     }
 
     fn assert_path_equals_segments(expected: &Path, actual: &Vec<PathSegment>) {

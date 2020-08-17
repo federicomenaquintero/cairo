@@ -90,7 +90,7 @@ impl<'a> ToGlibPtr<'a, *mut ffi::cairo_t> for &'a Context {
 impl FromGlibPtrNone<*mut ffi::cairo_t> for Context {
     #[inline]
     unsafe fn from_glib_none(ptr: *mut ffi::cairo_t) -> Context {
-        Self::from_raw_none(ptr)
+        Self::from_raw_none(ptr).unwrap()
     }
 }
 
@@ -98,7 +98,7 @@ impl FromGlibPtrNone<*mut ffi::cairo_t> for Context {
 impl FromGlibPtrBorrow<*mut ffi::cairo_t> for Context {
     #[inline]
     unsafe fn from_glib_borrow(ptr: *mut ffi::cairo_t) -> ::Borrowed<Context> {
-        Self::from_raw_borrow(ptr)
+        Self::from_raw_borrow(ptr).unwrap()
     }
 }
 
@@ -106,7 +106,7 @@ impl FromGlibPtrBorrow<*mut ffi::cairo_t> for Context {
 impl FromGlibPtrFull<*mut ffi::cairo_t> for Context {
     #[inline]
     unsafe fn from_glib_full(ptr: *mut ffi::cairo_t) -> Context {
-        Self::from_raw_full(ptr)
+        Self::from_raw_full(ptr).unwrap()
     }
 }
 
@@ -119,7 +119,15 @@ gvalue_impl!(
 
 impl Clone for Context {
     fn clone(&self) -> Context {
-        unsafe { Self::from_raw_none(self.to_raw_none()) }
+        unsafe {
+            let ptr = self.to_raw_none();
+            ffi::cairo_reference(ptr);
+            Context(ptr::NonNull::new_unchecked(ptr))
+        }
+
+        // We do the above, instead of
+        //   unsafe { Self::from_raw_none(self.to_raw_none()).unwrap() }
+        // because we want to be able to clone Contexts in an error state.
     }
 }
 
@@ -133,22 +141,34 @@ impl Drop for Context {
 
 impl Context {
     #[inline]
-    pub unsafe fn from_raw_none(ptr: *mut ffi::cairo_t) -> Context {
+    pub unsafe fn from_raw_none(ptr: *mut ffi::cairo_t) -> Result<Context, Error> {
         assert!(!ptr.is_null());
+
+        let status = ffi::cairo_status(ptr);
+        status_to_result(status)?;
+
         ffi::cairo_reference(ptr);
-        Context(ptr::NonNull::new_unchecked(ptr))
+        Ok(Context(ptr::NonNull::new_unchecked(ptr)))
     }
 
     #[inline]
-    pub unsafe fn from_raw_borrow(ptr: *mut ffi::cairo_t) -> ::Borrowed<Context> {
+    pub unsafe fn from_raw_borrow(ptr: *mut ffi::cairo_t) -> Result<::Borrowed<Context>, Error> {
         assert!(!ptr.is_null());
-        ::Borrowed::new(Context(ptr::NonNull::new_unchecked(ptr)))
+
+        let status = ffi::cairo_status(ptr);
+        status_to_result(status)?;
+
+        Ok(::Borrowed::new(Context(ptr::NonNull::new_unchecked(ptr))))
     }
 
     #[inline]
-    pub unsafe fn from_raw_full(ptr: *mut ffi::cairo_t) -> Context {
+    pub unsafe fn from_raw_full(ptr: *mut ffi::cairo_t) -> Result<Context, Error> {
         assert!(!ptr.is_null());
-        Context(ptr::NonNull::new_unchecked(ptr))
+
+        let status = ffi::cairo_status(ptr);
+        status_to_result(status)?;
+
+        Ok(Context(ptr::NonNull::new_unchecked(ptr)))
     }
 
     pub fn to_raw_none(&self) -> *mut ffi::cairo_t {
@@ -160,7 +180,7 @@ impl Context {
         status_to_result(status)
     }
 
-    pub fn new(target: &Surface) -> Context {
+    pub fn new(target: &Surface) -> Result<Context, Error> {
         unsafe { Self::from_raw_full(ffi::cairo_create(target.to_raw_none())) }
     }
 
@@ -799,7 +819,7 @@ mod tests {
 
     fn create_ctx() -> Context {
         let surface = ImageSurface::create(Format::ARgb32, 10, 10).unwrap();
-        Context::new(&surface)
+        Context::new(&surface).unwrap()
     }
 
     #[test]
