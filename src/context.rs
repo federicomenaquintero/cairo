@@ -219,8 +219,10 @@ impl Context {
         self.status()
     }
 
-    pub fn get_group_target(&self) -> Surface {
-        unsafe { Surface::from_raw_none(ffi::cairo_get_group_target(self.0.as_ptr())) }
+    pub fn get_group_target(&self) -> Result<Surface, Error> {
+        let surface = unsafe { Surface::from_raw_none(ffi::cairo_get_group_target(self.0.as_ptr())) };
+        self.status()?;
+        Ok(surface)
     }
 
     pub fn set_source_rgb(&self, red: f64, green: f64, blue: f64) {
