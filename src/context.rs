@@ -198,12 +198,14 @@ impl Context {
         unsafe { Surface::from_raw_none(ffi::cairo_get_target(self.0.as_ptr())) }
     }
 
-    pub fn push_group(&self) {
+    pub fn push_group(&self) -> Result<(), Error> {
         unsafe { ffi::cairo_push_group(self.0.as_ptr()) }
+        self.status()
     }
 
-    pub fn push_group_with_content(&self, content: Content) {
+    pub fn push_group_with_content(&self, content: Content) -> Result<(), Error> {
         unsafe { ffi::cairo_push_group_with_content(self.0.as_ptr(), content.into()) }
+        self.status()
     }
 
     pub fn pop_group(&self) -> Pattern {
