@@ -119,12 +119,12 @@ mod test {
 
         cr.set_line_width(25.0);
 
-        cr.set_source_rgba(1.0, 0.0, 0.0, 0.5);
+        cr.set_source_rgba(1.0, 0.0, 0.0, 0.5).unwrap();
         cr.line_to(0., 0.);
         cr.line_to(100., 100.);
         cr.stroke();
 
-        cr.set_source_rgba(0.0, 0.0, 1.0, 0.5);
+        cr.set_source_rgba(0.0, 0.0, 1.0, 0.5).unwrap();
         cr.line_to(0., 100.);
         cr.line_to(100., 0.);
         cr.stroke();

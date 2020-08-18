@@ -225,12 +225,14 @@ impl Context {
         Ok(surface)
     }
 
-    pub fn set_source_rgb(&self, red: f64, green: f64, blue: f64) {
+    pub fn set_source_rgb(&self, red: f64, green: f64, blue: f64) -> Result<(), Error> {
         unsafe { ffi::cairo_set_source_rgb(self.0.as_ptr(), red, green, blue) }
+        self.status()
     }
 
-    pub fn set_source_rgba(&self, red: f64, green: f64, blue: f64, alpha: f64) {
+    pub fn set_source_rgba(&self, red: f64, green: f64, blue: f64, alpha: f64) -> Result<(), Error> {
         unsafe { ffi::cairo_set_source_rgba(self.0.as_ptr(), red, green, blue, alpha) }
+        self.status()
     }
 
     pub fn set_source(&self, source: &Pattern) {
