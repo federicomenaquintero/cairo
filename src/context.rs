@@ -208,12 +208,15 @@ impl Context {
         self.status()
     }
 
-    pub fn pop_group(&self) -> Pattern {
-        unsafe { Pattern::from_raw_full(ffi::cairo_pop_group(self.0.as_ptr())) }
+    pub fn pop_group(&self) -> Result<Pattern, Error> {
+        let pattern = unsafe { Pattern::from_raw_full(ffi::cairo_pop_group(self.0.as_ptr())) };
+        self.status()?;
+        Ok(pattern)
     }
 
-    pub fn pop_group_to_source(&self) {
+    pub fn pop_group_to_source(&self) -> Result<(), Error>{
         unsafe { ffi::cairo_pop_group_to_source(self.0.as_ptr()) }
+        self.status()
     }
 
     pub fn get_group_target(&self) -> Surface {
